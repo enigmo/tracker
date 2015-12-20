@@ -4,7 +4,12 @@ describe Tracker do
   include Rack::Test::Methods
 
   def app
+    Tracker::API.logger(logger)
     Tracker::API.new
+  end
+
+  let :logger do
+    Logger.new('/dev/null')
   end
 
   before :each do
@@ -61,8 +66,13 @@ describe Tracker do
     end
 
     it 'should decode base64 encoded data' do
-      get request_url
+      expect(logger).to receive(:info) do |record_json|
+        record = JSON.load(record_json)
 
+        expect(record['td_url']).to eq 'https://example.com/'
+      end
+
+      get request_url
       expect(last_response.body).to eq response_jsonp
     end
   end
