@@ -9,9 +9,9 @@ Gem::Specification.new do |spec|
   spec.authors       = ["'Taku Okawa'"]
   spec.email         = ["'taku.okawa@gmail.com'"]
 
-  spec.summary       = %q{TODO: Write a short summary, because Rubygems requires one.}
-  spec.description   = %q{TODO: Write a longer description or delete this line.}
-  spec.homepage      = "TODO: Put your gem's website or public repo URL here."
+  spec.summary       = %q{brwoser event tracking endpoint}
+  spec.description   = %q{brwoser event tracking endpoint}
+  spec.homepage      = "https://github.com/enigmo/tracker"
   spec.license       = "MIT"
 
   # Prevent pushing this gem to RubyGems.org by setting 'allowed_push_host', or
