@@ -57,31 +57,76 @@ module Tracker
       include Virtus.model
 
       attribute :ip
+      attribute :tracking_id
       # raw user_agent string
       attribute :user_agent
+
       # detected browser info
-      attribute :browser
+      attribute :name
+      attribute :version
+      attribute :full_version
+      attribute :platform
+      attribute :device
+      attribute :bot_name
+
       attribute :location
+
+      attribute :td_fields
 
       def initialize(attrs = {})
         super(attrs)
         detect_browser!
       end
 
+      # rubocop:disable Metrics/MethodLength
       def detect_browser!
-        self.browser = Browser.new(ua: user_agent)
+        browser = Browser.new(ua: user_agent)
+        self.attributes = {
+          name: browser.name,
+          version: browser.version,
+          full_version: browser.full_version,
+          platform: browser.platform,
+          device: device_name(browser),
+          bot_name: browser.bot_name
+        }
+      end
+      # rubocop:enable Metrics/MethodLength
+
+      def device_name(browser)
+        case
+        when browser.tablet? then 'Tablet'
+        when browser.mobile? then 'Mobile'
+        when (browser.bot? || browser.search_engine?) then  'Bot'
+        when browser.platform != :other then 'PC'
+        else 'Unknown'
+        end
       end
     end
 
-    class Record
+    class Record #:nodoc:
       include Virtus.model
 
-      attribute :td_fields
       attribute :event
+      attribute :client
 
-      def as_json(options={})
-        td_fields.merge(event.attributes)
+      # rubocop:disable Metrics/MethodLength
+      # rubocop:disable Metrics/AbcSize
+      def as_json(options = {})
+        {
+          ip: client.ip,
+          tracking_id: client.tracking_id,
+          id: client.td_fields[:id],
+          user_agent: client.user_agent,
+          name: client.name,
+          version: client.version,
+          platform: client.platform,
+          device: client.device,
+          bot_name: client.bot_name,
+          location: client.location
+        }.merge(event.as_json(options))
       end
+      # rubocop:enable Metrics/MethodLength
+      # rubocop:enable Metrics/AbcSize
     end
   end
 
@@ -108,7 +153,9 @@ module Tracker
         @client ||= Entities::Client.new(
           user_agent: request.user_agent,
           ip: akamai_client_ip || remote_ip,
-          location: akamai_edgescape
+          tracking_id: tracking_id,
+          location: akamai_edgescape,
+          td_fields: td_fields
         )
       end
 
@@ -118,6 +165,10 @@ module Tracker
 
       def td_fields
         request_params[:data].select { |k, _v| k.starts_with?('td') }
+      end
+
+      def tracking_id
+        request_params[:data][:tracking_id]
       end
 
       params :td_fields do
@@ -158,7 +209,7 @@ module Tracker
 
     get :pageview do
       event_class = Entities::Events.infer_event_class('pageview')
-      record = Entities::Record.new(td_fields: td_fields, event: event_class.parse(request_params[:data]))
+      record = Entities::Record.new(client: client, event: event_class.parse(request_params[:data]))
       logger.info(record.to_json)
       request_params[:callback] ? request_params[:callback] : 'tracked'
     end
@@ -181,7 +232,7 @@ module Tracker
     # url generation(trackEvent(:table) => /:path/:database/:table))
     get 'event_:event_type' do
       event_class = Entities::Events.infer_event_class(request_params[:event_type])
-      record = Entities::Record.new(td_fields: td_fields, event: event_class.parse(request_params[:data]))
+      record = Entities::Record.new(client: client, event: event_class.parse(request_params[:data]))
       logger.info(record.to_json)
       request_params[:callback] ? request_params[:callback] : 'tracked'
     end
