@@ -69,7 +69,7 @@ describe Tracker do
       expect(logger).to receive(:info) do |record_json|
         record = JSON.load(record_json)
 
-        expect(record['td_url']).to eq 'https://example.com/'
+        expect(record['url']).to eq 'https://example.com/'
       end
 
       get request_url
