@@ -19,7 +19,7 @@
       host: location.hostname+(location.port ? ':'+location.port: ''),
       development: false
     });
-    tracker.trackPageview('pageview');
-    tracker.trackEvent('event_click', { 'summary' : 'this is simmary' });
+    tracker.trackEvent('pageview');
+    tracker.trackEvent('click', { 'summary' : 'this is simmary' });
   </script>
 </html>

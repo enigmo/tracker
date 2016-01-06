@@ -46,7 +46,7 @@ describe Tracker do
 
   describe 'event' do
     let :request_url do
-      '/event_click?' +
+      '/click?' +
         { api_key: '',
           modified: '1450434122941',
           data: encoded_data,

@@ -35,6 +35,7 @@ module Tracker
       end
 
       class Pageview < Event #:nodoc:
+        attribute :event_type, String, default: 'pageview'
       end
 
       class Click < Event #:nodoc:
@@ -42,7 +43,7 @@ module Tracker
         attribute :label
       end
 
-      Events.register('pageview', Click)
+      Events.register('pageview', Pageview)
       Events.register('click', Click)
     end
 

@@ -75,25 +75,6 @@ module Tracker
     use Rack::JSONP
     default_format :json
 
-    desc 'track pageview'
-    params do
-      requires :modified, type: Integer
-      requires :data,
-               type: Hash,
-               coerce_with: ->(c) { MultiJson.load(Base64.decode64(c)) } do
-                 use :td_fields
-                 optional :tracking_id
-               end
-      optional :callback, type: String
-    end
-
-    get :pageview do
-      event_class = Entities::Events.infer_event_class('pageview')
-      record = Entities::Record.new(client: client, event: event_class.parse(request_params[:data]))
-      logger.info(record.to_json)
-      request_params[:callback] ? request_params[:callback] : 'tracked'
-    end
-
     desc 'track event'
     params do
       requires :modified, type: Integer
@@ -108,9 +89,9 @@ module Tracker
       requires :event_type, type: String, values: Entities::Events.event_names
     end
 
-    # ugly hack to circumvent td-js-sdk request
-    # url generation(trackEvent(:table) => /:path/:database/:table))
-    get 'event_:event_type' do
+    # This, combined with :event_type requirement above, 
+    # captures all the path predefined(like /pageview or /click)
+    get '*event_type' do
       event_class = Entities::Events.infer_event_class(request_params[:event_type])
       record = Entities::Record.new(client: client, event: event_class.parse(request_params[:data]))
       logger.info(record.to_json)
